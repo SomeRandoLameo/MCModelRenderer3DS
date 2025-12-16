@@ -11,6 +11,20 @@ In order to propperly test this, we need some parts:
 - Rendering       We can use Amethyst for this, since ReCraft3DS uses Amethyst
 - Debug menus     We can use ImGui CTR for this. Performance really doesnt matter here.
 
+### Proposed Features:
+- Load minecraft Texture atlasses
+- Render Blocks
+- Render Items
+- Render TileEntities
+- Render Hardcoded Entity Models
+- Wireframe view
+- Camera controller
+- Hide cubes (using imgui) because why not :D
+- "Resource pack support" Alternative texture metadata loader*
+
+*By that i mean just being able to show other textues rather than vanilla textures. 
+If i want, i can add fully fledged resource pack support with fallback textures later.
+
 ### Credits:
 - Tobid7 for [Amethyst](https://github.com/tobid7/amethyst)
 - Tobid7 for [imgui-impl-ctr](https://github.com/npid7/imgui-impl-ctr)
