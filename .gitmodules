@@ -1,0 +1,3 @@
+[submodule "vendor/amethyst"]
+	path = vendor/amethyst
+	url = https://github.com/tobid7/amethyst
