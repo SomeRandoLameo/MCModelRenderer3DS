@@ -16,14 +16,17 @@ In order to propperly test this, we need some parts:
 - Render Blocks
 - Render Items
 - Render TileEntities
-- Render Hardcoded Entity Models
+- Render Hardcoded Entity Models preferrably with animation, doesnt need to be tho
 - Wireframe view
 - Camera controller
 - Hide cubes (using imgui) because why not :D
+- Minecraft Version independent**
 - "Resource pack support" Alternative texture metadata loader*
 
 *By that i mean just being able to show other textues rather than vanilla textures. 
 If i want, i can add fully fledged resource pack support with fallback textures later.
+
+**By that i mean supporting data from 1.0 (the lowest version that makes sense for [Re::Craft 3DS](https://github.com/SomeRandoLameo/Re-Craft-3DS)) to the newest version
 
 ### Credits:
 - Tobid7 for [Amethyst](https://github.com/tobid7/amethyst)
