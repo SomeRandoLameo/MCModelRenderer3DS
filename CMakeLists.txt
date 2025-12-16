@@ -20,13 +20,21 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 
 # Add amethyst subdirectory (exclude examples)
-add_subdirectory(vendor/amethyst EXCLUDE_FROM_ALL)
+add_subdirectory(vendor)
 
 __amy_make_shader(${CMAKE_CURRENT_SOURCE_DIR}/shaders/shader2d.v.pica shader2d)
 __amy_make_shader(${CMAKE_CURRENT_SOURCE_DIR}/shaders/lithium.v.pica lithium)
 
+
 add_executable(${PROJECT_NAME} source/main.cpp)
-target_link_libraries(${PROJECT_NAME} PRIVATE amethyst)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC
+        amethyst
+        imgui-ctr
+        ctru
+        citro3d
+)
+
 target_compile_options(${PROJECT_NAME} PRIVATE -O2)
 
 ctr_generate_smdh(
