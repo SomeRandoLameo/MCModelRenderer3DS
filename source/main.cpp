@@ -126,7 +126,6 @@ public:
             ImGui::EndCombo();
         }
         ImGui::Checkbox("Show Demo Window", &show_demo_window);
-        ImGui::Checkbox("Allow Iron Draw", &draw_iron_allow);
         ImGui::End();
 
         if (show_demo_window) {
@@ -143,11 +142,15 @@ public:
         dl->DrawRectFilled(0, 50, Amy::Color(0.f, 1.f, 0.f, 1.f));
         dl->DrawText(Amy::fvec2(5, 50), stats, Amy::Color(255, 0, 255));
 
+
+
+
+
+
+        // Required for rendering, do not remove
         Iron::NewFrame();
-        if(draw_iron_allow) {
-            Iron::DrawOn(Top);
-            Iron::Draw(*dl);
-        }
+        Iron::DrawOn(Top);
+        Iron::Draw(*dl);
         dl->Clear();
 
         ImGui::Render();
@@ -166,7 +169,6 @@ public:
     Iron::Drawlist::Ref dl = nullptr;
 
     bool show_demo_window = false;
-    bool draw_iron_allow = false;
     ImGuiIO* io = nullptr;
 };
 

@@ -2,5 +2,9 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/amethyst" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/amethyst/vendor/libpicasso" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/imgui-ctr" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/vendor/imgui-ctr/vendor/imgui" vcs="Git" />
   </component>
 </project>
