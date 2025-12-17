@@ -1,3 +1,7 @@
+// Enable Npi Assert to write Errors to file
+#define IMGUI_IMPL_CITRO3D_USE_NPI_ASSERT
+#define IMGUI_IMPL_CIR_USE_NPI_ASSERT
+
 #include <amethyst.hpp>
 #include <iostream>
 #include <3ds.h>
@@ -7,16 +11,9 @@
 #include "imgui_impl_ctr.h"
 #include "imgui_impl_citro3d.h"
 
-// Enable Npi Assert to write Errors to file
-#define IMGUI_IMPL_CITRO3D_USE_NPI_ASSERT
-#define IMGUI_IMPL_CIR_USE_NPI_ASSERT
-
 const auto SCREEN_WIDTH = 400.0f;
 const auto SCREEN_HEIGHT = 480.0f;
 const auto FB_SCALE = 1.0f;
-
-C3D_RenderTarget* Top;
-C3D_RenderTarget* Bottom;
 
 std::vector<std::string> styles = {
         "ImGui Light",
@@ -56,7 +53,7 @@ public:
         Mgr->AutoLoad("icon", "romfs:/icon.png");
         Mgr->Add("font", fnt);
         // Mgr->AutoLoad("font", "romfs:/ComicNeue.ttf");
-        dl = new Iron::Drawlist();
+        dl = Iron::Drawlist::New();
         dl->SetFont(Mgr->Get<Iron::Font>("font"));
 
         ImGui::CreateContext();
@@ -71,8 +68,11 @@ public:
     }
 
     ~MCMR() {
-        delete Top;
-        delete dl;
+        C3D::DeleteScreen(Top);
+        C3D::DeleteScreen(Bottom);
+        dl.reset();
+        Mgr->Remove("font");
+        Mgr->Remove("icon");
         delete Mgr;
 
         ImGui_ImplCitro3D_Shutdown();
@@ -150,8 +150,6 @@ public:
         }
         dl->Clear();
 
-        C3D_DepthTest(false, GPU_GREATER, GPU_WRITE_ALL);
-
         ImGui::Render();
         ImGui_ImplCitro3D_RenderDrawData(ImGui::GetDrawData(), reinterpret_cast<void*>(Top->Ptr()), reinterpret_cast<void*>(Bottom->Ptr()));
 
@@ -164,8 +162,8 @@ public:
 
     C3D::Screen *Top = nullptr;
     C3D::Screen* Bottom = nullptr;
-    Amy::AssetMgr* Mgr;
-    Iron::Drawlist* dl;
+    Amy::AssetMgr* Mgr = nullptr;
+    Iron::Drawlist::Ref dl = nullptr;
 
     bool show_demo_window = false;
     bool draw_iron_allow = false;
