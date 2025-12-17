@@ -26,7 +26,10 @@ __amy_make_shader(${CMAKE_CURRENT_SOURCE_DIR}/shaders/shader2d.v.pica shader2d)
 __amy_make_shader(${CMAKE_CURRENT_SOURCE_DIR}/shaders/lithium.v.pica lithium)
 
 
-add_executable(${PROJECT_NAME} source/main.cpp)
+add_executable(${PROJECT_NAME} source/main.cpp
+    source/ResourceManager.cpp
+    source/DirectoryUtils.cpp
+)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
         amethyst

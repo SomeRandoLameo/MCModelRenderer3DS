@@ -10,6 +10,7 @@
 #include <vector>
 #include "imgui_impl_ctr.h"
 #include "imgui_impl_citro3d.h"
+#include "ResourceManager.h"
 
 const auto SCREEN_WIDTH = 400.0f;
 const auto SCREEN_HEIGHT = 480.0f;
@@ -91,15 +92,18 @@ public:
         }
 
         std::string stats = std::format(
-                "Delta: {:.3} -> {:.3} FPS\nTime: {}\nLinearRam: {}\nVIT: "
-                "[{}/{}/{}]\nAssets: {}\nMain: {}",
+                "Delta: {:.3} -> {:.3} FPS\n"
+                "Time: {}\n"
+                "LinearRam: {}\n"
+                "VIT: [{}/{}/{}]\n"
+                "Assets: {}\n"
+                "Main: {}",
                 this->Delta(), 1000.0 / this->Delta(),
                 Amy::Utils::FormatMillis(this->Time() * 1000.f),
                 Amy::Utils::FormatBytes(linearSpaceFree()), Amy::Iron::VerticesDrawn(),
                 Amy::Iron::IndicesDrawn(), Amy::Iron::IndicesDrawn() / 3,
                 Mgr->CountAll(),
-                Amy::Utils::FormatNanos(
-                        Amy::GTrace::GetTraceRef("Main")->GetLastDiff()));
+                Amy::Utils::FormatNanos(Amy::GTrace::GetTraceRef("Main")->GetLastDiff()));
 
         C3D::StartFrame(true);
         Amy::GTrace::Beg("Main");
@@ -135,16 +139,26 @@ public:
         Top->Clear();
         Bottom->Clear();
         Top->Use();
-        dl->DrawTex(Mgr->Get<Amy::Texture>("icon"));
-        dl->DrawRectFilled(Amy::fvec2(50, 0), 48, Amy::Color(255, 255, 255, 160));
-        dl->DrawCircleFilled(Amy::fvec2(200, 120), 50, Amy::Color("#ffffff"), 40);
-        dl->DrawSolid();
-        dl->DrawRectFilled(0, 50, Amy::Color(0.f, 1.f, 0.f, 1.f));
-        dl->DrawText(Amy::fvec2(5, 50), stats, Amy::Color(255, 0, 255));
+        //dl->DrawTex(Mgr->Get<Amy::Texture>("icon"));
+        //dl->DrawRectFilled(Amy::fvec2(50, 0), 48, Amy::Color(255, 255, 255, 160));
+        //dl->DrawCircleFilled(Amy::fvec2(200, 120), 50, Amy::Color("#ffffff"), 40);
+        //dl->DrawSolid();
+        //dl->DrawRectFilled(0, 50, Amy::Color(0.f, 1.f, 0.f, 1.f));
+        //dl->DrawText(Amy::fvec2(5, 50), stats, Amy::Color(255, 0, 255));
 
 
 
-
+        if(resourceManager.CheckRootAssets()){
+            dl->DrawText(Amy::fvec2(5, 0), "Assets: exist", Amy::Color(255, 0, 255));
+            //dl->DrawText(Amy::fvec2(5, 5), resourceManager->GetRootResourcePack().packPath.c_str(), Amy::Color(255, 0, 255));
+        }else{
+            dl->DrawText(Amy::fvec2(5, 0), "Assets: missing", Amy::Color(255, 0, 255));
+            dl->DrawText(Amy::fvec2(5, 10), resourceManager.s1, Amy::Color(255, 0, 255));
+            dl->DrawText(Amy::fvec2(5, 20), resourceManager.s2, Amy::Color(255, 0, 255));
+            dl->DrawText(Amy::fvec2(5, 30), resourceManager.s3, Amy::Color(255, 0, 255));
+            dl->DrawText(Amy::fvec2(5, 40), resourceManager.s4, Amy::Color(255, 0, 255));
+           // dl->DrawText(Amy::fvec2(5, 5), std::string("AssetPath: %s", resourceManager.GetRootAssetsPath().c_str()), Amy::Color(255, 0, 255));
+        }
 
 
         // Required for rendering, do not remove
@@ -162,6 +176,10 @@ public:
         C3D::EndFrame();
         Amy::GTrace::End("Main");
     }
+
+
+
+    ResourceManager resourceManager = ResourceManager();
 
     C3D::Screen *Top = nullptr;
     C3D::Screen* Bottom = nullptr;
