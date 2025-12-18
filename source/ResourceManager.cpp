@@ -1,4 +1,5 @@
 #include <format>
+#include <fstream>
 #include "ResourceManager.h"
 #include "DirectoryUtils.h"
 
@@ -7,28 +8,17 @@ bool ResourceManager::CheckRootAssets() {
 
     if (m_rootAssetsChecked) return !m_rootAssetsPath.empty();
 
-    auto directories = DirectoryUtils::ListDirectories(m_basePath);
+    auto directories = DirectoryUtils::ListDirectories(m_rootPackPath);
 
     for (const auto& dir : directories) {
-        std::string assetRootFile = m_basePath + dir + "/.mcassetsroot";  //TODO: Why the hell won std::filesystem::exists detect dotfiles??
-        std::string packMeta      = m_basePath + dir + "/pack.mcmeta";
-        std::string packIcon      = m_basePath + dir + "/pack.png";
-
-        bool assetRootExists = DirectoryUtils::FileExists(assetRootFile);
-        //TODO: Why the hell wont  std::filesystem::exists detect dotfiles??
-        assetRootExists ? s1 = "true" : s1 = std::format("false {}", assetRootFile);
+        std::string packMeta      = m_rootPackPath + dir + "/assets/pack.mcmeta";
+        std::string packIcon      = m_rootPackPath + dir + "/assets/icons/icon_32x32.png";
 
         bool packMetaExists  = DirectoryUtils::FileExists(packMeta);
-        packMetaExists ? s2 = "true" : s2 = "false";
-
         bool packIconExists  = DirectoryUtils::FileExists(packIcon);
-        packIconExists ? s3 = "true" : s3 = "false";
 
-        if ( assetRootExists && packMetaExists && packIconExists ) {
-
-            m_rootAssetsPath = m_basePath + dir;
-
-            s4 = m_rootAssetsPath;
+        if ( packMetaExists && packIconExists ) {
+            m_rootAssetsPath = m_rootPackPath + dir;
             m_rootAssetsChecked = true;
             return true;
         }
@@ -43,9 +33,15 @@ ResourcePack ResourceManager::GetRootResourcePack() {
 }
 
 ResourcePack ResourceManager::GetResourcePack(const std::string &resourcePackPath) {
-    bool isRootPack = false;
-    if( resourcePackPath == m_rootAssetsPath ) isRootPack = true;
 
-    return ResourcePack(isRootPack, nlohmann::json(), "", resourcePackPath);
+    if( resourcePackPath == m_rootAssetsPath ){
+        std::ifstream f(resourcePackPath);
+        nlohmann::json packMeta = nlohmann::json::parse(f);
+        return ResourcePack(true, nlohmann::json(), "", resourcePackPath);
+    } else{
+        std::ifstream f(resourcePackPath + "/assets/pack.mcmeta");
+        nlohmann::json packMeta = nlohmann::json::parse(f);
+        return ResourcePack(false, packMeta, resourcePackPath + "/assets/icons/icon_32x32.png", resourcePackPath);
+    }
 }
 

@@ -13,7 +13,8 @@ struct ResourcePack {
 
 class ResourceManager {
 private:
-    std::string m_basePath = "romfs:/resourcepacks/";
+    std::string m_rootPackPath = "romfs:/rootpacks/";
+    std::string m_resourcePackPath = "romfs:/resourcepacks/";
 
     bool m_rootAssetsChecked = false;
     std::string m_rootAssetsPath;
@@ -33,10 +34,4 @@ public:
     std::string GetRootAssetsPath() const { return m_rootAssetsPath; }
 
     ResourcePack GetRootResourcePack();
-
-//DEBUGGING PURPOSES ONLY
-    std::string s1 = "";
-    std::string s2 = "";
-    std::string s3 = "";
-    std::string s4 = "";
 };

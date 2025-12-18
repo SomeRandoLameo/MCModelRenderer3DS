@@ -16,26 +16,6 @@ const auto SCREEN_WIDTH = 400.0f;
 const auto SCREEN_HEIGHT = 480.0f;
 const auto FB_SCALE = 1.0f;
 
-std::vector<std::string> styles = {
-        "ImGui Light",
-        "ImGui Dark",
-        "ImGui Classic",
-};
-
-std::string cstyle = styles[1];
-
-void LoadStyle() {
-    if (cstyle == styles[0])
-        ImGui::StyleColorsLight();
-    else if (cstyle == styles[1])
-        ImGui::StyleColorsDark();
-    else if (cstyle == styles[2])
-        ImGui::StyleColorsClassic();
-    else
-        ImGui::StyleColorsDark();
-}
-
-
 class MCMR : public Amy::App {
 public:
     MCMR() {
@@ -43,38 +23,37 @@ public:
         gfxInitDefault();
         romfsInit();
         C3D::Init();
-        Top = C3D::CreateScreen(GFX_TOP);
-        Bottom = C3D::CreateScreen(GFX_BOTTOM);
+        m_Top = C3D::CreateScreen(GFX_TOP);
+        m_Bottom = C3D::CreateScreen(GFX_BOTTOM);
 
-        Mgr = new Amy::AssetMgr();
+        m_Mgr = new Amy::AssetMgr();
         Iron::Init();
 
         auto fnt = Iron::Font::New();
         fnt->LoadBMF("romfs:/ComicNeue.png");
-        Mgr->AutoLoad("icon", "romfs:/icon.png");
-        Mgr->Add("font", fnt);
+        m_Mgr->AutoLoad("icon", "romfs:/icon.png");
+        m_Mgr->Add("font", fnt);
         // Mgr->AutoLoad("font", "romfs:/ComicNeue.ttf");
-        dl = Iron::Drawlist::New();
-        dl->SetFont(Mgr->Get<Iron::Font>("font"));
+        m_dl = Iron::Drawlist::New();
+        m_dl->SetFont(m_Mgr->Get<Iron::Font>("font"));
 
         ImGui::CreateContext();
-        LoadStyle();
-        io = &ImGui::GetIO();
+        m_io = &ImGui::GetIO();
         auto& style = ImGui::GetStyle();
         style.ScaleAllSizes(0.5f);
-        io->IniFilename = nullptr;
+        m_io->IniFilename = nullptr;
         ImGui_ImplCtr_Init();
         ImGui_ImplCitro3D_Init();
 
     }
 
     ~MCMR() {
-        C3D::DeleteScreen(Top);
-        C3D::DeleteScreen(Bottom);
-        dl.reset();
-        Mgr->Remove("font");
-        Mgr->Remove("icon");
-        delete Mgr;
+        C3D::DeleteScreen(m_Top);
+        C3D::DeleteScreen(m_Bottom);
+        m_dl.reset();
+        m_Mgr->Remove("font");
+        m_Mgr->Remove("icon");
+        delete m_Mgr;
 
         ImGui_ImplCitro3D_Shutdown();
         ImGui_ImplCtr_Shutdown();
@@ -91,7 +70,7 @@ public:
             Exit();
         }
 
-        std::string stats = std::format(
+        std::string metrics = std::format(
                 "Delta: {:.3} -> {:.3} FPS\n"
                 "Time: {}\n"
                 "LinearRam: {}\n"
@@ -102,73 +81,105 @@ public:
                 Amy::Utils::FormatMillis(this->Time() * 1000.f),
                 Amy::Utils::FormatBytes(linearSpaceFree()), Amy::Iron::VerticesDrawn(),
                 Amy::Iron::IndicesDrawn(), Amy::Iron::IndicesDrawn() / 3,
-                Mgr->CountAll(),
+                m_Mgr->CountAll(),
                 Amy::Utils::FormatNanos(Amy::GTrace::GetTraceRef("Main")->GetLastDiff()));
 
         C3D::StartFrame(true);
         Amy::GTrace::Beg("Main");
 
-        io->DisplaySize = ImVec2(SCREEN_WIDTH, SCREEN_HEIGHT);
-        io->DisplayFramebufferScale = ImVec2(FB_SCALE, FB_SCALE);
+        m_io->DisplaySize = ImVec2(SCREEN_WIDTH, SCREEN_HEIGHT);
+        m_io->DisplayFramebufferScale = ImVec2(FB_SCALE, FB_SCALE);
         ImGui_ImplCitro3D_NewFrame();
         ImGui_ImplCtr_NewFrame();
         ImGui::NewFrame();
 
+        if (!m_amy_allowed) {
+            ImGui::SetNextWindowPos(ImVec2(10, 180));
+            ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
+            ImGui::Begin("Overlay", nullptr,
+                         ImGuiWindowFlags_NoDecoration |
+                         ImGuiWindowFlags_AlwaysAutoResize |
+                         ImGuiWindowFlags_NoSavedSettings |
+                         ImGuiWindowFlags_NoFocusOnAppearing |
+                         ImGuiWindowFlags_NoNav);
 
-        ImGui::Begin("Test");
-        ImGui::Text("Hold Y and use CIRCLEPAD to Move\nThe Window f.e. to Bottom Screen!");
+            ImGui::Text("Preview Rendering Disabled");
+            ImGui::Text("Settings -> [EXP] Allow Amy Rendering");
 
-        if (ImGui::BeginCombo("##StyleSelect", cstyle.c_str())) {
-            for (const auto & style : styles) {
-                bool is_selected = (cstyle.c_str() == style);
-                if (ImGui::Selectable(style.c_str(), is_selected)) {
-                    cstyle = style;
-                    LoadStyle();
-                }
-                if (is_selected) ImGui::SetItemDefaultFocus();
-            }
-            ImGui::EndCombo();
+            ImGui::End();
         }
-        ImGui::Checkbox("Show Demo Window", &show_demo_window);
+
+        ImGui::SetNextWindowPos(ImVec2(40, 240), ImGuiCond_FirstUseEver); // Center horizontally: (400-320)/2 = 40
+        ImGui::SetNextWindowSize(ImVec2(320, 240), ImGuiCond_FirstUseEver);
+        ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration);
+
+        if (ImGui::BeginMenuBar()) {
+            if (ImGui::BeginMenu("File")) {
+                if (ImGui::MenuItem("Exit")) {
+                    Exit();
+                }
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("View")) {
+                ImGui::MenuItem("Show Amethyst Metrics", nullptr, &m_amy_metrics, m_amy_allowed);
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip("Amy is disabled!");
+                }
+
+                ImGui::MenuItem("Show ImGUI Demo Window", nullptr, &m_show_demo_window);
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Settings")) {
+                ImGui::MenuItem("Dark mode", nullptr, &m_dark_mode);
+                ImGui::MenuItem("[EXP] Allow Amy Rendering", nullptr, &m_amy_allowed);
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenuBar();
+        }
+
+        if (m_resourceManager.CheckRootAssets()) {
+            //dl->DrawText(Amy::fvec2(5, 0), , Amy::Color(255, 0, 255));
+            ImGui::Text("Assets: exist");
+        }else{
+            //dl->DrawText(Amy::fvec2(5, 0), , Amy::Color(255, 0, 255));
+            ImGui::Text("Assets: missing");
+        }
+
         ImGui::End();
 
-        if (show_demo_window) {
-            ImGui::ShowDemoWindow(&show_demo_window);
+        if (m_show_demo_window) {
+            ImGui::ShowDemoWindow(&m_show_demo_window);
+        }
+        if (m_dark_mode) {
+            ImGui::StyleColorsDark();
+        } else {
+            ImGui::StyleColorsLight();
         }
 
-        Top->Clear();
-        Bottom->Clear();
-        Top->Use();
+        m_Top->Clear();
+        m_Bottom->Clear();
+        m_Top->Use();
         //dl->DrawTex(Mgr->Get<Amy::Texture>("icon"));
         //dl->DrawRectFilled(Amy::fvec2(50, 0), 48, Amy::Color(255, 255, 255, 160));
         //dl->DrawCircleFilled(Amy::fvec2(200, 120), 50, Amy::Color("#ffffff"), 40);
         //dl->DrawSolid();
         //dl->DrawRectFilled(0, 50, Amy::Color(0.f, 1.f, 0.f, 1.f));
-        //dl->DrawText(Amy::fvec2(5, 50), stats, Amy::Color(255, 0, 255));
 
-
-
-        if(resourceManager.CheckRootAssets()){
-            dl->DrawText(Amy::fvec2(5, 0), "Assets: exist", Amy::Color(255, 0, 255));
-            //dl->DrawText(Amy::fvec2(5, 5), resourceManager->GetRootResourcePack().packPath.c_str(), Amy::Color(255, 0, 255));
-        }else{
-            dl->DrawText(Amy::fvec2(5, 0), "Assets: missing", Amy::Color(255, 0, 255));
-            dl->DrawText(Amy::fvec2(5, 10), resourceManager.s1, Amy::Color(255, 0, 255));
-            dl->DrawText(Amy::fvec2(5, 20), resourceManager.s2, Amy::Color(255, 0, 255));
-            dl->DrawText(Amy::fvec2(5, 30), resourceManager.s3, Amy::Color(255, 0, 255));
-            dl->DrawText(Amy::fvec2(5, 40), resourceManager.s4, Amy::Color(255, 0, 255));
-           // dl->DrawText(Amy::fvec2(5, 5), std::string("AssetPath: %s", resourceManager.GetRootAssetsPath().c_str()), Amy::Color(255, 0, 255));
+        //TODO: Respect light/dark mode from Imgui
+        if(m_amy_metrics) {
+            m_dl->DrawText(Amy::fvec2(5, 5), metrics, Amy::Color(255, 255, 255));
         }
-
 
         // Required for rendering, do not remove
         Iron::NewFrame();
-        Iron::DrawOn(Top);
-        Iron::Draw(*dl);
-        dl->Clear();
+        if(m_amy_allowed){
+            Iron::DrawOn(m_Top);
+            Iron::Draw(*m_dl);
+        }
+        m_dl->Clear();
 
         ImGui::Render();
-        ImGui_ImplCitro3D_RenderDrawData(ImGui::GetDrawData(), reinterpret_cast<void*>(Top->Ptr()), reinterpret_cast<void*>(Bottom->Ptr()));
+        ImGui_ImplCitro3D_RenderDrawData(ImGui::GetDrawData(), reinterpret_cast<void*>(m_Top->Ptr()), reinterpret_cast<void*>(m_Bottom->Ptr()));
 
         C3D_DepthTest(true, GPU_GREATER, GPU_WRITE_ALL);
         C3D_CullFace(GPU_CULL_BACK_CCW);
@@ -177,17 +188,20 @@ public:
         Amy::GTrace::End("Main");
     }
 
+private:
+    ResourceManager m_resourceManager = ResourceManager();
 
+    C3D::Screen *m_Top = nullptr;
+    C3D::Screen* m_Bottom = nullptr;
+    Amy::AssetMgr* m_Mgr = nullptr;
+    Iron::Drawlist::Ref m_dl = nullptr;
+    ImGuiIO* m_io = nullptr;
 
-    ResourceManager resourceManager = ResourceManager();
+    bool m_show_demo_window = false;
+    bool m_dark_mode = false;
 
-    C3D::Screen *Top = nullptr;
-    C3D::Screen* Bottom = nullptr;
-    Amy::AssetMgr* Mgr = nullptr;
-    Iron::Drawlist::Ref dl = nullptr;
-
-    bool show_demo_window = false;
-    ImGuiIO* io = nullptr;
+    bool m_amy_metrics = true;
+    bool m_amy_allowed = false;
 };
 
 int main() {
